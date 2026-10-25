@@ -66,6 +66,8 @@ button:disabled{opacity:.55;cursor:default}
 <input id="mac" class="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="00:1A:79:XX:XX:XX">
 <button type="button" id="gen" class="ghost"></button>
 </div>
+<label id="l-proxy"></label>
+<input id="proxy" class="ltr" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://my-proxy.workers.dev/">
 </div>
 
 <button id="send" type="button"></button>
@@ -75,6 +77,7 @@ button:disabled{opacity:.55;cursor:default}
 <script>
 var T = {
   ar: {
+    proxy: 'رابط وسيط Cookie (اختياري)',
     sub: 'املأ البيانات ثم أرسلها إلى التلفاز.',
     paste: 'لصق سريع (اختياري)', type: 'نوع المصدر', name: 'الاسم', user: 'اسم المستخدم', pass: 'كلمة المرور',
     fmt: 'صيغة البث', url: 'رابط الخادم', urlM3u: 'رابط القائمة', urlSt: 'رابط البوابة',
@@ -85,6 +88,7 @@ var T = {
     filled: 'تم التعرف على الرابط وتعبئة الحقول'
   },
   en: {
+    proxy: 'Cookie proxy URL (optional)',
     sub: 'Fill in the details, then send them to your TV.',
     paste: 'Quick paste (optional)', type: 'Source type', name: 'Name', user: 'Username', pass: 'Password',
     fmt: 'Stream format', url: 'Server URL', urlM3u: 'Playlist URL', urlSt: 'Portal URL',
@@ -106,7 +110,7 @@ function tr(k) { return T[lang][k]; }
 function applyLang() {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  var map = { sub: 'sub', 'l-paste': 'paste', 'l-type': 'type', 'l-name': 'name', 'l-user': 'user', 'l-pass': 'pass', 'l-fmt': 'fmt', gen: 'gen', lang: 'lang' };
+  var map = { sub: 'sub', 'l-paste': 'paste', 'l-type': 'type', 'l-name': 'name', 'l-user': 'user', 'l-pass': 'pass', 'l-fmt': 'fmt', 'l-proxy': 'proxy', gen: 'gen', lang: 'lang' };
   Object.keys(map).forEach(function (id) { $(id).textContent = tr(map[id]); });
   if (!$('send').disabled) $('send').textContent = tr('send');
   $('eye').textContent = $('pass').type === 'password' ? tr('show') : tr('hide');
@@ -164,7 +168,7 @@ $('gen').onclick = function () {
 
 $('send').onclick = function () {
   var btn = $('send');
-  ['url', 'user', 'pass', 'mac'].forEach(function (i) { mark(i, false); });
+  ['url', 'user', 'pass', 'mac', 'proxy'].forEach(function (i) { mark(i, false); });
   if (!topic) { say(tr('scan'), 'err'); return; }
   var t = $('type').value;
   var d = { type: t, name: $('name').value.trim(), url: $('url').value.trim() };
@@ -179,6 +183,8 @@ $('send').onclick = function () {
     if (/^[0-9A-F]{12}$/.test(mac)) mac = mac.replace(/(..)(?=.)/g, '$1:');
     if (mac && !/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(mac)) { mark('mac', true); say(tr('badMac'), 'err'); return; }
     d.mac = mac;
+    var px = $('proxy').value.trim();
+    if (px) { if (!/^https?:\/\/\S+$/i.test(px)) { mark('proxy', true); say(tr('badUrl'), 'err'); return; } d.proxy = px; }
   }
   btn.disabled = true; btn.textContent = tr('sending'); say('');
   try { localStorage.setItem('lc.name', d.name); } catch (e) { }
