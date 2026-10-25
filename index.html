@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumora</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;background:#06070d;color:#eceefa;display:flex;justify-content:center;padding:20px}
+.card{width:100%;max-width:460px;background:#0e1122;border:1px solid #2a3060;border-radius:20px;padding:24px}
+h1{margin:0 0 18px;font-size:24px;background:linear-gradient(90deg,#c4b5fd,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+label{display:block;margin:14px 0 6px;color:#8f96bb;font-size:14px}
+input,select{width:100%;padding:14px;border-radius:12px;border:1px solid #2a3060;background:#171c3b;color:#eceefa;font-size:16px}
+button{width:100%;margin-top:22px;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:700;color:#fff;background:linear-gradient(90deg,#8b5cf6,#06b6d4)}
+#msg{margin-top:16px;text-align:center;font-size:15px}
+.ltr{direction:ltr;text-align:left}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Lumora</h1>
+<label>نوع المصدر / Source type</label>
+<select id="type"><option value="xtream">Xtream Codes</option><option value="m3u">M3U</option><option value="stalker">Stalker</option></select>
+<label>الاسم / Name</label>
+<input id="name" class="ltr" autocomplete="off">
+<label id="lurl">رابط الخادم / Server URL</label>
+<input id="url" class="ltr" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="http://server:8080">
+<div id="gx">
+<label>اسم المستخدم / Username</label>
+<input id="user" class="ltr" autocomplete="off" autocapitalize="off">
+<label>كلمة المرور / Password</label>
+<input id="pass" class="ltr" autocomplete="off" autocapitalize="off">
+</div>
+<div id="gs" class="hide">
+<label>MAC</label>
+<input id="mac" class="ltr" autocomplete="off" placeholder="00:1A:79:XX:XX:XX">
+</div>
+<button id="send">إرسال إلى التلفاز / Send to TV</button>
+<div id="msg"></div>
+</div>
+<script>
+var q = new URLSearchParams(location.search);
+var topic = (q.get('t') || '').replace(/[^a-z0-9-]/gi, '');
+var $ = function (i) { return document.getElementById(i); };
+function sync() {
+  var t = $('type').value;
+  $('gx').classList.toggle('hide', t !== 'xtream');
+  $('gs').classList.toggle('hide', t !== 'stalker');
+  $('lurl').textContent = t === 'm3u' ? 'رابط القائمة / Playlist URL' : t === 'stalker' ? 'رابط البوابة / Portal URL' : 'رابط الخادم / Server URL';
+}
+$('type').onchange = sync; sync();
+$('send').onclick = function () {
+  var m = $('msg');
+  if (!topic) { m.textContent = 'امسح الرمز من التلفاز مجدداً / Scan the TV code again'; return; }
+  var t = $('type').value;
+  var d = { type: t, name: $('name').value.trim(), url: $('url').value.trim() };
+  if (t === 'xtream') { d.user = $('user').value.trim(); d.pass = $('pass').value; }
+  if (t === 'stalker') d.mac = $('mac').value.trim();
+  if (!d.url) { m.textContent = 'أدخل الرابط / Enter the URL'; return; }
+  m.textContent = '…';
+  fetch('https://ntfy.sh/' + topic, { method: 'POST', body: JSON.stringify(d) }).then(function (r) {
+    m.textContent = r.ok ? '✔ تم الإرسال، انظر إلى التلفاز / Sent, check your TV' : '✖ فشل الإرسال / Failed';
+  }, function () { m.textContent = '✖ فشل الاتصال / Network error'; });
+};
+</script>
+</body>
+</html>
