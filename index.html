@@ -3,66 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#06070d">
 <title>Lumora</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;background:#06070d;color:#eceefa;display:flex;justify-content:center;padding:20px}
-.card{width:100%;max-width:460px;background:#0e1122;border:1px solid #2a3060;border-radius:20px;padding:24px}
-h1{margin:0 0 18px;font-size:24px;background:linear-gradient(90deg,#c4b5fd,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+body{margin:0;min-height:100vh;font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;background:#06070d;color:#eceefa;display:flex;justify-content:center;padding:20px}
+.card{width:100%;max-width:460px;background:#0e1122;border:1px solid #2a3060;border-radius:20px;padding:24px;align-self:flex-start}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+h1{margin:0;font-size:24px;background:linear-gradient(90deg,#c4b5fd,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+#lang{width:auto;margin:0;padding:6px 12px;font-size:14px;font-weight:600;background:#171c3b;border:1px solid #2a3060;border-radius:10px}
+.sub{color:#8f96bb;font-size:13px;margin:0 0 6px}
 label{display:block;margin:14px 0 6px;color:#8f96bb;font-size:14px}
 input,select{width:100%;padding:14px;border-radius:12px;border:1px solid #2a3060;background:#171c3b;color:#eceefa;font-size:16px}
-button{width:100%;margin-top:22px;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:700;color:#fff;background:linear-gradient(90deg,#8b5cf6,#06b6d4)}
-#msg{margin-top:16px;text-align:center;font-size:15px}
+input:focus,select:focus{outline:2px solid #8b5cf6;outline-offset:1px}
+input.bad{border-color:#f87171}
+.row{display:flex;gap:8px}
+.row input{flex:1}
+.ghost{width:auto;margin:0;padding:0 16px;font-size:14px;font-weight:600;border:1px solid #2a3060;background:#171c3b;color:#c4b5fd;border-radius:12px}
+button{width:100%;margin-top:22px;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:700;color:#fff;background:linear-gradient(90deg,#8b5cf6,#06b6d4);cursor:pointer}
+button:disabled{opacity:.55;cursor:default}
+#msg{margin-top:16px;text-align:center;font-size:15px;min-height:22px}
+#msg.ok{color:#6ee7b7}
+#msg.err{color:#fca5a5}
 .ltr{direction:ltr;text-align:left}
 .hide{display:none}
 </style>
 </head>
 <body>
 <div class="card">
-<h1>Lumora</h1>
-<label>نوع المصدر / Source type</label>
+<div class="top"><h1>Lumora</h1><button type="button" id="lang" class="ghost"></button></div>
+<p class="sub" id="sub"></p>
+
+<label id="l-paste"></label>
+<input id="paste" class="ltr" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="http://server/get.php?username=…&password=…">
+
+<label id="l-type"></label>
 <select id="type"><option value="xtream">Xtream Codes</option><option value="m3u">M3U</option><option value="stalker">Stalker</option></select>
-<label>الاسم / Name</label>
-<input id="name" class="ltr" autocomplete="off">
-<label id="lurl">رابط الخادم / Server URL</label>
-<input id="url" class="ltr" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="http://server:8080">
+
+<label id="l-name"></label>
+<input id="name" class="ltr" autocomplete="off" maxlength="60">
+
+<label id="l-url"></label>
+<input id="url" class="ltr" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="http://server:8080">
+
 <div id="gx">
-<label>اسم المستخدم / Username</label>
-<input id="user" class="ltr" autocomplete="off" autocapitalize="off">
-<label>كلمة المرور / Password</label>
-<input id="pass" class="ltr" autocomplete="off" autocapitalize="off">
+<label id="l-user"></label>
+<input id="user" class="ltr" autocomplete="off" autocapitalize="off" spellcheck="false">
+<label id="l-pass"></label>
+<div class="row">
+<input id="pass" type="password" class="ltr" autocomplete="off" autocapitalize="off" spellcheck="false">
+<button type="button" id="eye" class="ghost"></button>
 </div>
+<label id="l-fmt"></label>
+<select id="format"><option value="m3u8">m3u8 (HLS)</option><option value="ts">ts</option></select>
+</div>
+
 <div id="gs" class="hide">
 <label>MAC</label>
-<input id="mac" class="ltr" autocomplete="off" placeholder="00:1A:79:XX:XX:XX">
+<div class="row">
+<input id="mac" class="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="00:1A:79:XX:XX:XX">
+<button type="button" id="gen" class="ghost"></button>
 </div>
-<button id="send">إرسال إلى التلفاز / Send to TV</button>
-<div id="msg"></div>
 </div>
+
+<button id="send" type="button"></button>
+<div id="msg" role="status" aria-live="polite"></div>
+</div>
+
 <script>
+var T = {
+  ar: {
+    sub: 'املأ البيانات ثم أرسلها إلى التلفاز.',
+    paste: 'لصق سريع (اختياري)', type: 'نوع المصدر', name: 'الاسم', user: 'اسم المستخدم', pass: 'كلمة المرور',
+    fmt: 'صيغة البث', url: 'رابط الخادم', urlM3u: 'رابط القائمة', urlSt: 'رابط البوابة',
+    show: 'إظهار', hide: 'إخفاء', gen: 'توليد', send: 'إرسال إلى التلفاز', lang: 'English',
+    scan: 'امسح الرمز من التلفاز مجدداً', needUrl: 'أدخل الرابط', badUrl: 'الرابط يجب أن يبدأ بـ http:// أو https://',
+    needUser: 'أدخل اسم المستخدم وكلمة المرور', badMac: 'صيغة MAC غير صحيحة', sending: 'جارٍ الإرسال…',
+    ok: '✔ تم الإرسال، انظر إلى التلفاز', fail: '✖ فشل الإرسال، حاول مجدداً', net: '✖ فشل الاتصال بالإنترنت',
+    filled: 'تم التعرف على الرابط وتعبئة الحقول'
+  },
+  en: {
+    sub: 'Fill in the details, then send them to your TV.',
+    paste: 'Quick paste (optional)', type: 'Source type', name: 'Name', user: 'Username', pass: 'Password',
+    fmt: 'Stream format', url: 'Server URL', urlM3u: 'Playlist URL', urlSt: 'Portal URL',
+    show: 'Show', hide: 'Hide', gen: 'Generate', send: 'Send to TV', lang: 'العربية',
+    scan: 'Scan the TV code again', needUrl: 'Enter the URL', badUrl: 'URL must start with http:// or https://',
+    needUser: 'Enter username and password', badMac: 'Invalid MAC address', sending: 'Sending…',
+    ok: '✔ Sent, check your TV', fail: '✖ Failed, try again', net: '✖ Network error',
+    filled: 'Link recognised, fields filled'
+  }
+};
+var $ = function (i) { return document.getElementById(i); };
 var q = new URLSearchParams(location.search);
 var topic = (q.get('t') || '').replace(/[^a-z0-9-]/gi, '');
-var $ = function (i) { return document.getElementById(i); };
+var lang = 'ar';
+try { lang = localStorage.getItem('lc.lang') || ((navigator.language || '').toLowerCase().indexOf('ar') === 0 ? 'ar' : 'en'); } catch (e) { }
+
+function tr(k) { return T[lang][k]; }
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  var map = { sub: 'sub', 'l-paste': 'paste', 'l-type': 'type', 'l-name': 'name', 'l-user': 'user', 'l-pass': 'pass', 'l-fmt': 'fmt', gen: 'gen', lang: 'lang' };
+  Object.keys(map).forEach(function (id) { $(id).textContent = tr(map[id]); });
+  if (!$('send').disabled) $('send').textContent = tr('send');
+  $('eye').textContent = $('pass').type === 'password' ? tr('show') : tr('hide');
+  sync();
+}
+
 function sync() {
   var t = $('type').value;
   $('gx').classList.toggle('hide', t !== 'xtream');
   $('gs').classList.toggle('hide', t !== 'stalker');
-  $('lurl').textContent = t === 'm3u' ? 'رابط القائمة / Playlist URL' : t === 'stalker' ? 'رابط البوابة / Portal URL' : 'رابط الخادم / Server URL';
+  $('l-url').textContent = t === 'm3u' ? tr('urlM3u') : t === 'stalker' ? tr('urlSt') : tr('url');
+  try { localStorage.setItem('lc.type', t); } catch (e) { }
 }
-$('type').onchange = sync; sync();
+
+function say(text, cls) { var m = $('msg'); m.textContent = text; m.className = cls || ''; }
+function mark(id, bad) { $(id).classList.toggle('bad', !!bad); }
+
+function parsePaste(s) {
+  s = s.trim();
+  if (!/^https?:\/\//i.test(s)) return null;
+  var u, user, pass;
+  try { u = new URL(s); } catch (e) { return null; }
+  user = u.searchParams.get('username'); pass = u.searchParams.get('password');
+  if (user !== null && pass !== null && /\/(get|player_api|panel_api)\.php$/i.test(u.pathname)) {
+    return { type: 'xtream', url: u.origin, user: user, pass: pass };
+  }
+  return { type: 'm3u', url: s };
+}
+
+$('paste').addEventListener('input', function () {
+  var d = parsePaste(this.value);
+  if (!d) return;
+  $('type').value = d.type; sync();
+  $('url').value = d.url;
+  if (d.type === 'xtream') { $('user').value = d.user; $('pass').value = d.pass; }
+  say(tr('filled'), 'ok');
+  this.value = '';
+});
+
+$('type').onchange = sync;
+$('lang').onclick = function () {
+  lang = lang === 'ar' ? 'en' : 'ar';
+  try { localStorage.setItem('lc.lang', lang); } catch (e) { }
+  applyLang();
+};
+$('eye').onclick = function () {
+  var p = $('pass');
+  p.type = p.type === 'password' ? 'text' : 'password';
+  $('eye').textContent = p.type === 'password' ? tr('show') : tr('hide');
+};
+$('gen').onclick = function () {
+  var h = function () { return ('0' + Math.floor(Math.random() * 256).toString(16)).slice(-2).toUpperCase(); };
+  $('mac').value = '00:1A:79:' + [h(), h(), h()].join(':');
+};
+
 $('send').onclick = function () {
-  var m = $('msg');
-  if (!topic) { m.textContent = 'امسح الرمز من التلفاز مجدداً / Scan the TV code again'; return; }
+  var btn = $('send');
+  ['url', 'user', 'pass', 'mac'].forEach(function (i) { mark(i, false); });
+  if (!topic) { say(tr('scan'), 'err'); return; }
   var t = $('type').value;
   var d = { type: t, name: $('name').value.trim(), url: $('url').value.trim() };
-  if (t === 'xtream') { d.user = $('user').value.trim(); d.pass = $('pass').value; }
-  if (t === 'stalker') d.mac = $('mac').value.trim();
-  if (!d.url) { m.textContent = 'أدخل الرابط / Enter the URL'; return; }
-  m.textContent = '…';
-  fetch('https://ntfy.sh/' + topic, { method: 'POST', body: JSON.stringify(d) }).then(function (r) {
-    m.textContent = r.ok ? '✔ تم الإرسال، انظر إلى التلفاز / Sent, check your TV' : '✖ فشل الإرسال / Failed';
-  }, function () { m.textContent = '✖ فشل الاتصال / Network error'; });
+  if (!d.url) { mark('url', true); say(tr('needUrl'), 'err'); return; }
+  if (!/^https?:\/\/\S+$/i.test(d.url)) { mark('url', true); say(tr('badUrl'), 'err'); return; }
+  if (t === 'xtream') {
+    d.user = $('user').value.trim(); d.pass = $('pass').value; d.format = $('format').value;
+    if (!d.user || !d.pass) { mark('user', !d.user); mark('pass', !d.pass); say(tr('needUser'), 'err'); return; }
+  }
+  if (t === 'stalker') {
+    var mac = $('mac').value.trim().toUpperCase().replace(/-/g, ':');
+    if (/^[0-9A-F]{12}$/.test(mac)) mac = mac.replace(/(..)(?=.)/g, '$1:');
+    if (mac && !/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(mac)) { mark('mac', true); say(tr('badMac'), 'err'); return; }
+    d.mac = mac;
+  }
+  btn.disabled = true; btn.textContent = tr('sending'); say('');
+  try { localStorage.setItem('lc.name', d.name); } catch (e) { }
+  fetch('https://ntfy.sh/' + topic, { method: 'POST', body: JSON.stringify(d), referrerPolicy: 'no-referrer' }).then(function (r) {
+    say(r.ok ? tr('ok') : tr('fail'), r.ok ? 'ok' : 'err');
+    if (r.ok) { $('pass').value = ''; }
+  }, function () { say(tr('net'), 'err'); }).then(function () {
+    btn.disabled = false; btn.textContent = tr('send');
+  });
 };
+
+try {
+  var st = localStorage.getItem('lc.type');
+  if (st && /^(xtream|m3u|stalker)$/.test(st)) $('type').value = st;
+  $('name').value = localStorage.getItem('lc.name') || '';
+} catch (e) { }
+applyLang();
+if (!topic) say(tr('scan'), 'err');
 </script>
 </body>
 </html>
